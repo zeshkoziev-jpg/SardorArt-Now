@@ -20,13 +20,10 @@ if (fs.existsSync('.env')) {
 
 
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-    console.log(Server `${PORT} portda ishlamoqda`);
-});
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '9249309686:AAGi_a_H30qzf2q-LQyzF1yxmhgaDtQwTDc';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'SardorArt_bot';
 const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
+
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 let DATA = { users: {}, sessions: {}, authNonces: {}, products: [], orders: [] };
@@ -239,7 +236,7 @@ app.post('/api/auth/verify', rateLimit(10), async (req, res) => {
   delete DATA.authNonces[nonce];
   await saveData();
 
-  sendTgMsg(auth.chatId, `✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!`, {
+  sendTgMsg(auth.chatId, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!", {
     inline_keyboard: [[{ text: "🌐 Saytga qaytish", url: SITE_URL }]]
   });
 
@@ -281,7 +278,7 @@ app.post('/api/seller/products', auth(), rateLimit(20), async (req, res) => {
   const ALLOWED_PAYMENTS = ['prepay100', 'prepay50', 'postpay100'];
 
   if (!name || name.length > 80) return res.status(400).json({ error: 'Nom xato' });
-  if (!Number.isInteger(price) , price < 1000 , price > 1000000000) return res.status(400).json({ error: 'Narx xato' });
+  if (!Number.isInteger(price) || price < 1000 || price > 1000000000) return res.status(400).json({ error: 'Narx xato' });
   if (!ALLOWED_GENRES.includes(genre)) return res.status(400).json({ error: 'Janr xato' });
   if (!ALLOWED_PAYMENTS.includes(paymentType)) return res.status(400).json({ error: 'To\'lov turi xato' });
   if (typeof image !==  'string' , !image.startsWith('data:image/') , image.length > 2500000) return res.status(400).json({ error: 'Rasm hajmi yoki formati xato' });
