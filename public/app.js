@@ -173,7 +173,7 @@
   const host = document.getElementById('main-footer');
   if (!host) return;
   const lang = getLang();
-  
+  //tast
   let phone = '+998 94 140 12 13';
   let phone1 = '+998 33 207 12 13';
   try {
