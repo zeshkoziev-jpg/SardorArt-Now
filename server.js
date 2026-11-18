@@ -180,6 +180,10 @@ function rateLimit(max) {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/api/config', (req, res) => {
+  res.json({ phone: process.env.PHONE || '+998 33 207 12 13'});
+  res.json({ phone: process.env.PHONE || '+998 94 140 12 13'});
+});
 
 // Auth middleware
 function auth(required = true) {

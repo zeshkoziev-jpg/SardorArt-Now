@@ -169,31 +169,37 @@
     });
   }
 
-  function renderFooter() {
-    const host = document.getElementById('main-footer');
-    if (!host) return;
-    const lang = getLang();
-    host.innerHTML = `
-      <div class="footer-inner">
-        <div class="footer-phone">+998 90 123 45 67</div>
-        <div class="payment-logos">
-          <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
-        </div>
-        <div class="lang-switch">
-          <button data-lang="uz" class="${lang === 'uz' ? 'active' : ''}">UZ</button>
-          <button data-lang="ru" class="${lang === 'ru' ? 'active' : ''}">RU</button>
-          <button data-lang="en" class="${lang === 'en' ? 'active' : ''}">EN</button>
-        </div>
-      </div>
-    `;
-    host.querySelectorAll('.lang-switch button').forEach(btn => {
-      btn.onclick = () => {
-        localStorage.setItem('lang', btn.dataset.lang);
-        location.reload();
-      };
-    });
-  }
+  async function renderFooter() {
+  const host = document.getElementById('main-footer');
+  if (!host) return;
+  const lang = getLang();
+  
+  let phone = '+998 94 140 12 13';
+  let phone1 = '+998 33 207 12 13';
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if (data.phone) phone = data.phone;
+  } catch (e) {}
 
+  host.innerHTML = 
+    <div class="footer-inner">
+      <div class="footer-phone">${phone}</div>
+      <div class="footer-phone">${phone1}</div>
+      <div class="payment-logos">
+        <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
+      </div>
+      <div class="lang-switch">
+        <button data-lang="uz" class="${lang === 'uz' ? 'active' : ''}">UZ</button>
+        <button data-lang="ru" class="${lang === 'ru' ? 'active' : ''}">RU</button>
+        <button data-lang="en" class="${lang === 'en' ? 'active' : ''}">EN</button>
+      </div>
+    </div>
+  ;
+  host.querySelectorAll('.lang-switch button').forEach(btn => {
+    btn.onclick = () => { localStorage.setItem('lang', btn.dataset.lang); location.reload(); };
+  });
+}
   function initBgAnimation() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const container = document.getElementById('bg-animation');
