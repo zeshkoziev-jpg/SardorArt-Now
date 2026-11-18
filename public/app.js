@@ -6,17 +6,17 @@
       home: 'Bosh sahifa', profile: 'Profil', cart: 'Savat', logout: 'Chiqish', seller: 'Savdogar', sold: 'Sotilganlar',
       all: 'Barchasi', portrait: 'Portret', landscape: 'Manzara', stilllife: 'Natyurmort', abstract: 'Abstrakt', animal: 'Animalistik', modern: 'Zamonaviy/Pop-art',
       prepay100: '100% oldindan', prepay50: '50% oldindan, 50% keyin', postpay100: '100% keyin',
-      search: 'Qidirish', add_to_cart: "Savatga qo'shish", buy: 'Sotib olish', remove: "O'chirish",
+      search: 'Qidirish', add_to_cart: 'Savatga qo\'shish', buy: 'Sotib olish', remove: 'O\'chirish',
       checkout: 'Buyurtma berish', submit_order: 'Buyurtmani tasdiqlash', get_location: 'Joylashuvni aniqlash',
-      save: 'Saqlash', create: 'Yaratish', empty_catalog: 'Hech narsa topilmadi', cart_empty: "Savat bo'sh",
-      cart_total: 'Jami', required: "Iltimos, maydonlarni to'ldiring", login_needed: 'Tizimga kiring',
+      save: 'Saqlash', create: 'Yaratish', empty_catalog: 'Hech narsa topilmadi', cart_empty: 'Savat bo\'sh',
+      cart_total: 'Jami', required: 'Iltimos, maydonlarni to\'ldiring', login_needed: 'Tizimga kiring',
       order_success: 'Buyurtma qabul qilindi!', error_generic: 'Xatolik yuz berdi', image_req: 'Rasm tanlang',
-      name: 'Ism', phone: 'Telefon', address: 'Manzil', my_works: 'Mening asarlarim', no_works: "Hozircha asarlaringiz yo'q",
-      product_name: 'Asar nomi', price: "Narx (so'm)", genre: 'Janr', payment_type: "To'lov turi", public: 'Ommaga taqdim etish',
-      seller_panel: 'Savdogar paneli', sold_items: 'Sotilganlar', buyer: 'Mijoz', map: 'Xarita', payment_info: "To'lov ma'lumoti",
-      upfront: "Oldindan to'lov", remaining: "Keyin to'lash", choose_role: 'Rolni tanlang', customer_role: 'Mijoz',
+      name: 'Ism', phone: 'Telefon', address: 'Manzil', my_works: 'Mening asarlarim', no_works: 'Hozircha asarlaringiz yo\'q',
+      product_name: 'Asar nomi', price: 'Narx (so\'m)', genre: 'Janr', payment_type: 'To\'lov turi', public: 'Ommaga taqdim etish',
+      seller_panel: 'Savdogar paneli', sold_items: 'Sotilganlar', buyer: 'Mijoz', map: 'Xarita', payment_info: 'To\'lov ma\'lumoti',
+      upfront: 'Oldindan to\'lov', remaining: 'Keyin to\'lash', choose_role: 'Rolni tanlang', customer_role: 'Mijoz',
       seller_role: 'Savdogar', tg_login: 'Telegram orqali kirish', enter_code: 'Tasdiqlash kodini kiriting',
-      verify: 'Tasdiqlash', success_auth: 'Muvaffaqiyatli kirdingiz!', waiting_tg: "Telegramda botga o'ting va raqamingizni yuboring..."
+      verify: 'Tasdiqlash', success_auth: 'Muvaffaqiyatli kirdingiz!', waiting_tg: 'Telegramda botga o\'ting va raqamingizni yuboring...'
     },
     ru: {
       home: 'Главная', profile: 'Профиль', cart: 'Корзина', logout: 'Выйти', seller: 'Продавец', sold: 'Продано',
@@ -53,11 +53,10 @@
   };
 
   const getLang = () => localStorage.getItem('lang') || 'uz';
-  const t = (key) => DICT[getLang()][key] || key;
+  const t = (key) => (DICT[getLang()] && DICT[getLang()][key]) || key;
   const esc = (s) => String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
-  const fmtMoney = (n) => Number(n).toLocaleString('ru-RU') + " so'm";
+  const fmtMoney = (n) => Number(n).toLocaleString('ru-RU') + ' so\'m';
 
-  // Auth holati
   let AUTH_USER = null;
   const getToken = () => localStorage.getItem('token');
 
@@ -71,32 +70,30 @@
     } catch {}
   }
 
-  // API wrapper
   async function api(url, opts = {}) {
     const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(url, { ...opts, headers });
+    const fetchOpts = { ...opts, headers };
+    if (fetchOpts.body && typeof fetchOpts.body !== 'string') {
+      fetchOpts.body = JSON.stringify(fetchOpts.body);
+    }
+
+    const res = await fetch(url, fetchOpts);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Xatolik');
     return data;
   }
 
-  // Toast bildirishnoma
   function toast(msg) {
     let el = document.querySelector('.toast');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'toast';
-      document.body.appendChild(el);
-    }
+    if (!el) { el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
     el.textContent = msg;
     el.style.opacity = 1;
     setTimeout(() => { el.style.opacity = 0; }, 3000);
   }
 
-  // Savat
   const getCart = () => JSON.parse(localStorage.getItem('cart') || '[]');
   const setCart = (c) => { localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); };
   function addToCart(item) {
@@ -115,7 +112,6 @@
     }
   }
 
-  // Header & Footer
   function renderHeader() {
     const host = document.getElementById('main-header');
     if (!host) return;
@@ -149,10 +145,10 @@
 
     const searchInput = document.getElementById('search-input');
     const urlQ = new URLSearchParams(location.search).get('q');
-    if (urlQ && searchInput) searchInput.value = urlQ;
+    if (urlQ) searchInput.value = urlQ;
 
     let timer;
-    searchInput?.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', (e) => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const q = e.target.value.trim();
@@ -170,36 +166,35 @@
   }
 
   async function renderFooter() {
-  const host = document.getElementById('main-footer');
-  if (!host) return;
-  const lang = getLang();
-  //tast
-  let phone = '+998 94 140 12 13';
-  let phone1 = '+998 33 207 12 13';
-  try {
-    const res = await fetch('/api/config');
-    const data = await res.json();
-    if (data.phone) phone = data.phone;
-  } catch (e) {}
+    const host = document.getElementById('main-footer');
+    if (!host) return;
+    const lang = getLang();
 
-  host.innerHTML = 
-    <div class="footer-inner">
-      <div class="footer-phone">${phone}</div>
-      <div class="footer-phone">${phone1}</div>
-      <div class="payment-logos">
-        <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
+    let phone = '+998 90 123 45 67';
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      if (data.phone) phone = data.phone;
+    } catch (e) {}
+
+    host.innerHTML = `
+      <div class="footer-inner">
+        <div class="footer-phone">${phone}</div>
+        <div class="payment-logos">
+          <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
+        </div>
+        <div class="lang-switch">
+          <button data-lang="uz" class="${lang === 'uz' ? 'active' : ''}">UZ</button>
+          <button data-lang="ru" class="${lang === 'ru' ? 'active' : ''}">RU</button>
+          <button data-lang="en" class="${lang === 'en' ? 'active' : ''}">EN</button>
+        </div>
       </div>
-      <div class="lang-switch">
-        <button data-lang="uz" class="${lang === 'uz' ? 'active' : ''}">UZ</button>
-        <button data-lang="ru" class="${lang === 'ru' ? 'active' : ''}">RU</button>
-        <button data-lang="en" class="${lang === 'en' ? 'active' : ''}">EN</button>
-      </div>
-    </div>
-  ;
-  host.querySelectorAll('.lang-switch button').forEach(btn => {
-    btn.onclick = () => { localStorage.setItem('lang', btn.dataset.lang); location.reload(); };
-  });
-}
+    `;
+    host.querySelectorAll('.lang-switch button').forEach(btn => {
+      btn.onclick = () => { localStorage.setItem('lang', btn.dataset.lang); location.reload(); };
+    });
+  }
+
   function initBgAnimation() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const container = document.getElementById('bg-animation');
@@ -217,12 +212,12 @@
     }
   }
 
-  // Sahifalar Logikasi
   async function initIndex() {
     const sidebar = document.getElementById('sidebar');
-    if (!sidebar) return;
     const genres = ['all', 'portrait', 'landscape', 'stilllife', 'abstract', 'animal', 'modern'];
-    sidebar.innerHTML = `<h3>${t('genre')}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${g}">${t(g)}</li>`).join('')}</ul>`;
+    if (sidebar) {
+      sidebar.innerHTML = `<h3>${t('genre')}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${g}">${t(g)}</li>`).join('')}</ul>`;
+    }
 
     let currentGenre = 'all';
     const grid = document.getElementById('products-grid');
@@ -230,13 +225,13 @@
 
     async function load(query = '') {
       try {
-        const res = await api(`/api/products?q=${encodeURIComponent(query)}&genre=${currentGenre}`);
-        if (res.products.length === 0) {
+        const res = await api(`/api/products?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(currentGenre)}`);
+        if (!res.products || res.products.length === 0) {
           grid.innerHTML = '';
-          empty?.classList.remove('hidden');
+          empty.classList.remove('hidden');
           return;
         }
-        empty?.classList.add('hidden');
+        empty.classList.add('hidden');
         grid.innerHTML = res.products.map(p => `
           <a href="/product.html?id=${p.id}" class="card">
             <img src="${p.image}" class="card-img" alt="${esc(p.name)}">
@@ -247,23 +242,23 @@
             </div>
           </a>
         `).join('');
-      } catch (e) {
-        toast(e.message);
-      }
+      } catch (e) { toast(e.message); }
     }
 
-    sidebar.addEventListener('click', (e) => {
-      if (e.target.tagName === 'LI') {
-        sidebar.querySelectorAll('li').forEach(el => el.classList.remove('active'));
-        e.target.classList.add('active');
-        currentGenre = e.target.dataset.genre;
-        load(document.getElementById('search-input')?.value.trim() || '');
-      }
-    });
+    if (sidebar) {
+      sidebar.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+          sidebar.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+          e.target.classList.add('active');
+          currentGenre = e.target.dataset.genre;
+          load(document.getElementById('search-input').value.trim());
+        }
+      });
+      sidebar.querySelector('[data-genre="all"]')?.classList.add('active');
+    }
 
     document.addEventListener('search', (e) => load(e.detail));
 
-    sidebar.querySelector('[data-genre="all"]')?.classList.add('active');
     const initialQ = new URLSearchParams(location.search).get('q') || '';
     load(initialQ);
   }
@@ -271,13 +266,9 @@
   async function initProduct() {
     const id = new URLSearchParams(location.search).get('id');
     const host = document.getElementById('product-detail');
-    if (!host) return;
-    if (!id) {
-      host.innerHTML = '<p>Xato</p>';
-      return;
-    }
+    if (!id) { host.innerHTML = '<p>Xato</p>'; return; }
     try {
-      const res = await api(`/api/products/${id}`);
+      const res = await api(`/api/products/${encodeURIComponent(id)}`);
       const p = res.product;
       host.innerHTML = `
         <div class="product-layout">
@@ -294,28 +285,25 @@
         </div>
       `;
       document.getElementById('add-btn').onclick = () => {
-        addToCart({ id: p.id, name: p.name, price: p.price, paymentType: p.paymentType, image: p.image });
+        addToCart({ id: p.id, name: p.name, price: p.price, image: p.image, paymentType: p.paymentType });
         toast(t('add_to_cart'));
       };
-    } catch (e) {
-      host.innerHTML = `<p>${esc(e.message)}</p>`;
-    }
+    } catch (e) { host.innerHTML = `<p>${esc(e.message)}</p>`; }
   }
 
   function initCart() {
     const list = document.getElementById('cart-list');
     const summary = document.getElementById('cart-summary');
     const totalEl = document.getElementById('cart-total-price');
-    if (!list) return;
 
     function render() {
       const cart = getCart();
       if (!cart.length) {
         list.innerHTML = `<p class="empty-msg">${t('cart_empty')}</p>`;
-        summary?.classList.add('hidden');
+        summary.classList.add('hidden');
         return;
       }
-      summary?.classList.remove('hidden');
+      summary.classList.remove('hidden');
       let total = 0;
       list.innerHTML = cart.map(item => {
         total += item.price * item.qty;
@@ -335,7 +323,7 @@
           </div>
         `;
       }).join('');
-      if (totalEl) totalEl.textContent = fmtMoney(total);
+      totalEl.textContent = fmtMoney(total);
     }
 
     list.addEventListener('click', (e) => {
@@ -353,27 +341,17 @@
       render();
     });
 
-    const checkoutBtn = document.getElementById('checkout-btn');
-    if (checkoutBtn) {
-      checkoutBtn.onclick = () => {
-        if (!getToken()) {
-          location.href = '/profile.html';
-          return;
-        }
-        location.href = '/checkout.html';
-      };
-    }
+    document.getElementById('checkout-btn').onclick = () => {
+      if (!getToken()) { location.href = '/profile.html'; return; }
+      location.href = '/checkout.html';
+    };
     render();
   }
 
   async function initCheckout() {
     const host = document.getElementById('main-content');
-    if (!host) return;
     const cart = getCart();
-    if (!cart.length) {
-      host.innerHTML = `<p>${t('cart_empty')}</p>`;
-      return;
-    }
+    if (!cart.length) { host.innerHTML = `<p>${t('cart_empty')}</p>`; return; }
 
     let total = 0, upfront = 0, remaining = 0;
     cart.forEach(item => {
@@ -381,12 +359,8 @@
       total += sum;
       const pt = item.paymentType || 'prepay100';
       if (pt === 'prepay100') upfront += sum;
-      else if (pt === 'prepay50') {
-        upfront += Math.floor(sum / 2);
-        remaining += Math.ceil(sum / 2);
-      } else if (pt === 'postpay100') {
-        remaining += sum;
-      }
+      else if (pt === 'prepay50') { upfront += Math.floor(sum / 2); remaining += Math.ceil(sum / 2); }
+      else if (pt === 'postpay100') remaining += sum;
     });
 
     host.innerHTML = `
@@ -428,26 +402,17 @@
       try {
         await api('/api/orders', {
           method: 'POST',
-          body: JSON.stringify({
-            items: cart.map(x => ({ id: x.id, qty: x.qty, name: x.name })),
-            buyerName: name,
-            buyerPhone: phone,
-            lat,
-            lng
-          })
+          body: { items: cart.map(x => ({ id: x.id, qty: x.qty, name: x.name })), buyerName: name, buyerPhone: phone, lat, lng }
         });
         localStorage.removeItem('cart');
         toast(t('order_success'));
         setTimeout(() => { location.href = '/'; }, 1000);
-      } catch (e) {
-        toast(e.message);
-      }
+      } catch (e) { toast(e.message); }
     };
   }
 
   function initProfile() {
     const area = document.getElementById('main-content');
-    if (!area) return;
     if (AUTH_USER) {
       area.innerHTML = `
         <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
@@ -457,13 +422,9 @@
           <button id="logout-profile" class="btn btn-danger btn-block">${t('logout')}</button>
         </div>
       `;
-      document.getElementById('logout-profile').onclick = () => {
-        localStorage.removeItem('token');
-        location.href = '/';
-      };
+      document.getElementById('logout-profile').onclick = () => { localStorage.removeItem('token'); location.href = '/'; };
       return;
     }
-
     area.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
         <h2>${t('choose_role')}</h2>
@@ -480,7 +441,7 @@
       statusDiv.classList.remove('hidden');
       statusDiv.textContent = t('waiting_tg');
       try {
-        const res = await api('/api/auth/start', { method: 'POST', body: JSON.stringify({ role }) });
+        const res = await api('/api/auth/start', { method: 'POST', body: { role } });
         window.open(res.url, '_blank');
 
         const interval = setInterval(async () => {
@@ -490,12 +451,10 @@
               clearInterval(interval);
               location.href = `/login.html?nonce=${encodeURIComponent(res.nonce)}`;
             }
-          } catch {}
+          } catch (e) {}
         }, 2000);
         setTimeout(() => clearInterval(interval), 10 * 60 * 1000);
-      } catch (e) {
-        statusDiv.textContent = e.message;
-      }
+      } catch (e) { statusDiv.textContent = e.message; }
     };
 
     document.getElementById('role-cust').onclick = () => startAuth('customer');
@@ -504,12 +463,8 @@
 
   function initLogin() {
     const host = document.getElementById('main-content');
-    if (!host) return;
     const nonce = new URLSearchParams(location.search).get('nonce');
-    if (!nonce) {
-      host.innerHTML = '<p>Xato</p>';
-      return;
-    }
+    if (!nonce) { host.innerHTML = '<p>Xato</p>'; return; }
 
     host.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
@@ -524,23 +479,17 @@
       const code = document.getElementById('code-input').value.trim();
       if (!/^\d{6}$/.test(code)) return;
       try {
-        const res = await api('/api/auth/verify', { method: 'POST', body: JSON.stringify({ nonce, code }) });
+        const res = await api('/api/auth/verify', { method: 'POST', body: { nonce, code } });
         localStorage.setItem('token', res.token);
         toast(t('success_auth'));
         setTimeout(() => { location.href = '/'; }, 1000);
-      } catch (e) {
-        document.getElementById('err-msg').textContent = e.message;
-      }
+      } catch (e) { document.getElementById('err-msg').textContent = e.message; }
     };
   }
 
   function initSeller() {
     const host = document.getElementById('main-content');
-    if (!host) return;
-    if (!AUTH_USER || AUTH_USER.role !== 'seller') {
-      host.innerHTML = "<p>Ruxsat yo'q</p>";
-      return;
-    }
+    if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
 
     host.innerHTML = `
       <h2>${t('seller_panel')}</h2>
@@ -587,8 +536,7 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          let w = img.width, h = img.height;
-          const max = 900;
+          let w = img.width, h = img.height, max = 900;
           if (w > max || h > max) {
             if (w > h) { h = h * max / w; w = max; }
             else { w = w * max / h; h = max; }
@@ -609,10 +557,7 @@
     const loadMy = async () => {
       const res = await api('/api/seller/products');
       const list = document.getElementById('my-list');
-      if (!res.products.length) {
-        list.innerHTML = `<p>${t('no_works')}</p>`;
-        return;
-      }
+      if (!res.products.length) { list.innerHTML = `<p>${t('no_works')}</p>`; return; }
       list.innerHTML = res.products.map(p => `
         <div class="cart-item" style="padding:10px; margin-bottom:10px;">
           <img src="${p.image}" style="width:60px; height:60px;">
@@ -625,7 +570,7 @@
     };
 
     window.deleteProduct = async (id) => {
-      if (!confirm("O'chirish?")) return;
+      if (!confirm('O\'chirish?')) return;
       await api(`/api/seller/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
       loadMy();
     };
@@ -638,36 +583,24 @@
       if (!name || !price || !base64Img) return toast(t('required'));
 
       try {
-        await api('/api/seller/products', {
-          method: 'POST',
-          body: JSON.stringify({ name, price, genre, paymentType, image: base64Img })
-        });
+        await api('/api/seller/products', { method: 'POST', body: { name, price, genre, paymentType, image: base64Img } });
         toast('OK');
         loadMy();
         document.getElementById('p-name').value = '';
         document.getElementById('p-price').value = '';
         base64Img = null;
         document.getElementById('p-preview').classList.add('hidden');
-      } catch (e) {
-        toast(e.message);
-      }
+      } catch (e) { toast(e.message); }
     };
     loadMy();
   }
 
   async function initSold() {
     const host = document.getElementById('main-content');
-    if (!host) return;
-    if (!AUTH_USER || AUTH_USER.role !== 'seller') {
-      host.innerHTML = "<p>Ruxsat yo'q</p>";
-      return;
-    }
+    if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
     try {
       const res = await api('/api/seller/sold');
-      if (!res.orders.length) {
-        host.innerHTML = `<p>${t('no_works')}</p>`;
-        return;
-      }
+      if (!res.orders.length) { host.innerHTML = `<p>${t('no_works')}</p>`; return; }
       host.innerHTML = `<h2>${t('sold_items')}</h2><div style="margin-top:20px;">` + res.orders.map(o => `
         <div class="card" style="padding:15px; margin-bottom:15px;">
           <h3>${esc(o.productName)}</h3>
@@ -677,17 +610,14 @@
           <iframe width="100%" height="150" style="border:0;border-radius:8px; margin-top:10px;" src="https://www.google.com/maps?q=${o.lat},${o.lng}&z=15&output=embed"></iframe>
         </div>
       `).join('') + '</div>';
-    } catch (e) {
-      host.innerHTML = `<p>${esc(e.message)}</p>`;
-    }
+    } catch (e) { host.innerHTML = `<p>${esc(e.message)}</p>`; }
   }
 
-  // Start
   (async () => {
     await fetchMe();
     initBgAnimation();
     renderHeader();
-    renderFooter();
+    await renderFooter();
 
     const page = document.body.dataset.page;
     if (page === 'index') initIndex();
@@ -699,4 +629,5 @@
     else if (page === 'seller') initSeller();
     else if (page === 'sold') initSold();
   })();
+
 })();
