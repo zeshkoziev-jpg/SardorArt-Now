@@ -171,6 +171,7 @@
     const lang = getLang();
 
     let phone = '+998 90 123 45 67';
+    let phone1 = '+998 90 123 45 67';
     try {
       const res = await fetch('/api/config');
       const data = await res.json();
@@ -180,6 +181,7 @@
     host.innerHTML = `
       <div class="footer-inner">
         <div class="footer-phone">${phone}</div>
+        <div class="footer-phone">${phone1}</div>
         <div class="payment-logos">
           <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
         </div>
