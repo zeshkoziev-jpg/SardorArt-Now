@@ -171,7 +171,7 @@
     const lang = getLang();
 
     let phone = '+998 90 123 45 67';
-    let phone1 = '+998 90 123 45 67';
+    let phone1 = '+998 33 207 1213';
     try {
       const res = await fetch('/api/config');
       const data = await res.json();
