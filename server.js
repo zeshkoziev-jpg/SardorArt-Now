@@ -18,8 +18,8 @@ if (fs.existsSync('.env')) {
 }
 
 const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'SardorZakaz_bot';
+const BOT_TOKEN = process.env.TELEGRAM_TOKEN_BOT;
+const BOT_USERNAME = process.env.TELEGRAM_USERNAME_BOT || 'SardorZakaz_bot';
 const SITE_URL = process.env.SITE_URL || `http://localhost:${PORT}`;
 const ADMIN_CHAT_ID = '8631399966'; // Sizning Telegram IDingiz
 
