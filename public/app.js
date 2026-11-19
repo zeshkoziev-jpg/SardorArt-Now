@@ -12,7 +12,7 @@
       cart_total: 'Jami', required: 'Iltimos, maydonlarni to\'ldiring', login_needed: 'Tizimga kiring',
       order_success: 'Buyurtma qabul qilindi!', error_generic: 'Xatolik yuz berdi', image_req: 'Rasm tanlang',
       name: 'Ism', phone: 'Telefon', address: 'Manzil', my_works: 'Mening asarlarim', no_works: 'Hozircha asarlaringiz yo\'q',
-      product_name: 'Asar nomi', price: 'Narx (so\'m)', genre: `Bo'limlar`, payment_type: 'To\'lov turi', public: 'Ommaga taqdim etish',
+      product_name: 'Asar nomi', price: 'Narx (so\'m)', genre: 'Janr', payment_type: 'To\'lov turi', public: 'Ommaga taqdim etish',
       seller_panel: 'Savdogar paneli', sold_items: 'Sotilganlar', buyer: 'Mijoz', map: 'Xarita', payment_info: 'To\'lov ma\'lumoti',
       upfront: 'Oldindan to\'lov', remaining: 'Keyin to\'lash', choose_role: 'Rolni tanlang', customer_role: 'Mijoz',
       seller_role: 'Savdogar', tg_login: 'Telegram orqali kirish', enter_code: 'Tasdiqlash kodini kiriting',
@@ -53,7 +53,7 @@
   };
 
   const getLang = () => localStorage.getItem('lang') || 'uz';
-  const t = (key) => (DICT[getLang()] && DICT[getLang()][key]) || key;
+  const t = (key) => DICT[getLang()][key] || key;
   const esc = (s) => String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
   const fmtMoney = (n) => Number(n).toLocaleString('ru-RU') + ' so\'m';
 
@@ -75,12 +75,7 @@
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const fetchOpts = { ...opts, headers };
-    if (fetchOpts.body && typeof fetchOpts.body !== 'string') {
-      fetchOpts.body = JSON.stringify(fetchOpts.body);
-    }
-
-    const res = await fetch(url, fetchOpts);
+    const res = await fetch(url, { ...opts, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Xatolik');
     return data;
@@ -97,10 +92,8 @@
   const getCart = () => JSON.parse(localStorage.getItem('cart') || '[]');
   const setCart = (c) => { localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); };
   function addToCart(item) {
-    const c = getCart();
-    const f = c.find(x => x.id === item.id);
-    if (f) f.qty += 1;
-    else c.push({ ...item, qty: 1 });
+    const c = getCart(); const f = c.find(x => x.id === item.id);
+    if (f) f.qty += 1; else c.push({ ...item, qty: 1 });
     setCart(c);
   }
   function updateCartBadge() {
@@ -122,15 +115,17 @@
         <button class="menu-btn" id="menu-toggle">☰</button>
         <a href="/" class="logo">SARDOR ART</a>
         <div class="search-bar">
-          <input type="text" id="search-input" placeholder="${esc(t('search'))}...">
+          <input type="text" id="search-input" placeholder="${t('search')}...">
         </div>
         <nav class="nav-links">
-          <a href="/">${esc(t('home'))}</a>
+          <a href="/">${t('home')}</a>
           <a href="/order.html" style="color:var(--accent); font-weight:bold;">Zakaz berish</a>
-          ${isAuth && AUTH_USER.role === 'seller' ? `<a href="/seller.html">${esc(t('seller'))}</a><a href="/sold.html">${esc(t('sold'))}</a>` : ''}
-          <a href="/profile.html">${esc(t('profile'))}</a>
-          <a href="/cart.html">${esc(t('cart'))} <span id="cart-badge" class="badge hidden">0</span></a>
-          ${isAuth ? `<button id="logout-btn">${esc(t('logout'))}</button>` : ''}
+          ${isAuth
+            ? `${AUTH_USER.role === 'seller' ? `<a href="/seller.html">${t('seller')}</a><a href="/sold.html">${t('sold')}</a>` : ''}
+            <a href="/profile.html">${t('profile')}</a>`
+            : `<a href="/profile.html">${t('profile')}</a>`}
+          <a href="/cart.html">${t('cart')} <span id="cart-badge" class="badge hidden">0</span></a>
+          ${isAuth ? `<button id="logout-btn">${t('logout')}</button>` : ''}
         </nav>
       </div>
     `;
@@ -138,8 +133,7 @@
     updateCartBadge();
 
     document.getElementById('logout-btn')?.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      location.href = '/';
+      localStorage.removeItem('token'); location.href = '/';
     });
 
     const searchInput = document.getElementById('search-input');
@@ -170,7 +164,6 @@
     const lang = getLang();
 
     let phone = '+998 90 123 45 67';
-    let phone1 = '+998 33 207 1213';
     try {
       const res = await fetch('/api/config');
       const data = await res.json();
@@ -179,8 +172,7 @@
 
     host.innerHTML = `
       <div class="footer-inner">
-        <div class="footer-phone">${esc(phone)}</div>
-        <div class="footer-phone">${esc(phone1)}</div>
+        <div class="footer-phone">${phone}</div>
         <div class="payment-logos">
           <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
         </div>
@@ -216,9 +208,7 @@
   async function initIndex() {
     const sidebar = document.getElementById('sidebar');
     const genres = ['all', 'portrait', 'landscape', 'stilllife', 'abstract', 'animal', 'modern'];
-    if (sidebar) {
-      sidebar.innerHTML = `<h3>${esc(t('genre'))}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${esc(g)}">${esc(t(g))}</li>`).join('')}</ul>`;
-    }
+    if (sidebar) sidebar.innerHTML = `<h3>${t('genre')}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${g}">${t(g)}</li>`).join('')}</ul>`;
 
     let currentGenre = 'all';
     const grid = document.getElementById('products-grid');
@@ -226,37 +216,33 @@
 
     async function load(query = '') {
       try {
-        const res = await api(`/api/products?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(currentGenre)}`);
-        if (!res.products || res.products.length === 0) {
-          if (grid) grid.innerHTML = '';
-          empty?.classList.remove('hidden');
-          return;
-        }
-        empty?.classList.add('hidden');
-        if (grid) {
-          grid.innerHTML = res.products.map(p => {
-            let priceHtml = `<div class="card-price">${fmtMoney(p.price)}</div>`;
-            if (p.discount > 0) {
-              priceHtml = `
-                <div class="card-price" style="color:#ff4d4f;">
-                  ${fmtMoney(p.price)}
-                  <span style="text-decoration:line-through; color:#888; font-size:14px; margin-left:5px;">${fmtMoney(p.originalPrice)}</span>
-                  <span style="background:#ff4d4f; color:white; padding:2px 5px; border-radius:5px; font-size:12px; margin-left:5px;">-${esc(p.discount)}%</span>
-                </div>
-              `;
-            }
-            return `
-              <a href="/product.html?id=${encodeURIComponent(p.id)}" class="card">
-                <img src="${esc(p.image)}" class="card-img" alt="${esc(p.name)}">
-                <div class="card-body">
-                  <div class="card-title">${esc(p.name)}</div>
-                  <div class="card-genre">${esc(t(p.genre))}</div>
-                  ${priceHtml}
-                </div>
-              </a>
+        const res = await api(`/api/products?q=${encodeURIComponent(query)}&genre=${currentGenre}`);
+        if (res.products.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+
+        grid.innerHTML = res.products.map(p => {
+          let priceHtml = `<div class="card-price">${fmtMoney(p.price)}</div>`;
+          if (p.discount > 0) {
+            priceHtml = `
+              <div class="card-price" style="color:#ff4d4f;">
+                ${fmtMoney(p.price)}
+                <span style="text-decoration:line-through; color:#888; font-size:14px; margin-left:5px;">${fmtMoney(p.originalPrice)}</span>
+                <span style="background:#ff4d4f; color:white; padding:2px 5px; border-radius:5px; font-size:12px; margin-left:5px;">-${p.discount}%</span>
+              </div>
             `;
-          }).join('');
-        }
+          }
+
+          return `
+            <a href="/product.html?id=${p.id}" class="card">
+              <img src="${p.image}" class="card-img" alt="${esc(p.name)}">
+              <div class="card-body">
+                <div class="card-title">${esc(p.name)}</div>
+                <div class="card-genre">${t(p.genre)}</div>
+                ${priceHtml}
+              </div>
+            </a>
+          `;
+        }).join('');
       } catch (e) { toast(e.message); }
     }
 
@@ -266,7 +252,7 @@
           sidebar.querySelectorAll('li').forEach(el => el.classList.remove('active'));
           e.target.classList.add('active');
           currentGenre = e.target.dataset.genre;
-          load((document.getElementById('search-input')?.value || '').trim());
+          load(document.getElementById('search-input').value.trim());
         }
       });
       sidebar.querySelector('[data-genre="all"]')?.classList.add('active');
@@ -281,11 +267,9 @@
   async function initProduct() {
     const id = new URLSearchParams(location.search).get('id');
     const host = document.getElementById('product-detail');
-    if (!host) return;
-    if (!id) { host.innerHTML = '<p>Xato</p>'; return; }
-
+    if (!id) return host.innerHTML = '<p>Xato</p>';
     try {
-      const res = await api(`/api/products/${encodeURIComponent(id)}`);
+      const res = await api(`/api/products/${id}`);
       const p = res.product;
 
       let priceHtml = `<div class="price">${fmtMoney(p.price)}</div>`;
@@ -294,38 +278,33 @@
           <div class="price" style="color:#ff4d4f;">
             ${fmtMoney(p.price)}
             <span style="text-decoration:line-through; color:#888; font-size:20px; margin-left:10px;">${fmtMoney(p.originalPrice)}</span>
-            <span style="background:#ff4d4f; color:white; padding:3px 8px; border-radius:5px; font-size:16px; margin-left:10px;">-${esc(p.discount)}%</span>
+            <span style="background:#ff4d4f; color:white; padding:3px 8px; border-radius:5px; font-size:16px; margin-left:10px;">-${p.discount}%</span>
           </div>
         `;
       }
 
-      let descHtml = p.description
-        ? `<div class="mt-2" style="line-height:1.6; color:#aaa; margin-bottom:20px;">${esc(p.description)}</div>`
-        : '';
+      let descHtml = p.description ? `<div class="mt-2" style="line-height:1.6; color:#aaa; margin-bottom:20px;">${esc(p.description)}</div>` : '';
 
       host.innerHTML = `
         <div class="product-layout">
-          <div class="product-image"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div>
+          <div class="product-image"><img src="${p.image}" alt="${esc(p.name)}"></div>
           <div class="product-info">
-            <div class="genre-tag">${esc(t(p.genre))}</div>
+            <div class="genre-tag">${t(p.genre)}</div>
             <h1>${esc(p.name)}</h1>
             ${descHtml}
             ${priceHtml}
             <div class="payment-info">
-              <strong>${esc(t('payment_type'))}:</strong> ${esc(t(p.paymentType))}
+              <strong>${t('payment_type')}:</strong> ${t(p.paymentType)}
             </div>
-            <button class="btn btn-primary btn-block" id="add-btn">${esc(t('add_to_cart'))}</button>
+            <button class="btn btn-primary btn-block" id="add-btn">${t('add_to_cart')}</button>
           </div>
         </div>
       `;
-
       document.getElementById('add-btn').onclick = () => {
         addToCart({ id: p.id, name: p.name, price: p.price, image: p.image, paymentType: p.paymentType });
         toast(t('add_to_cart'));
       };
-    } catch (e) {
-      host.innerHTML = `<p>${esc(e.message)}</p>`;
-    }
+    } catch (e) { host.innerHTML = `<p>${e.message}</p>`; }
   }
 
   function initCart() {
@@ -335,28 +314,24 @@
 
     function render() {
       const cart = getCart();
-      if (!cart.length) {
-        list.innerHTML = `<p class="empty-msg">${esc(t('cart_empty'))}</p>`;
-        summary.classList.add('hidden');
-        return;
-      }
+      if (!cart.length) { list.innerHTML = `<p class="empty-msg">${t('cart_empty')}</p>`; summary.classList.add('hidden'); return; }
       summary.classList.remove('hidden');
       let total = 0;
       list.innerHTML = cart.map(item => {
         total += item.price * item.qty;
         return `
           <div class="cart-item">
-            <img src="${esc(item.image)}" alt="">
+            <img src="${item.image}" alt="">
             <div class="cart-item-info">
               <h3>${esc(item.name)}</h3>
               <div class="price">${fmtMoney(item.price)}</div>
               <div class="qty-controls">
-                <button data-id="${esc(item.id)}" data-act="minus">-</button>
+                <button data-id="${item.id}" data-act="minus">-</button>
                 <span>${item.qty}</span>
-                <button data-id="${esc(item.id)}" data-act="plus">+</button>
+                <button data-id="${item.id}" data-act="plus">+</button>
               </div>
             </div>
-            <button class="btn btn-danger" data-id="${esc(item.id)}" data-act="remove">${esc(t('remove'))}</button>
+            <button class="btn btn-danger" data-id="${item.id}" data-act="remove">${t('remove')}</button>
           </div>
         `;
       }).join('');
@@ -374,12 +349,11 @@
       if (act === 'plus') item.qty++;
       else if (act === 'minus' && item.qty > 1) item.qty--;
       else if (act === 'remove') cart = cart.filter(x => x.id !== id);
-      setCart(cart);
-      render();
+      setCart(cart); render();
     });
 
     document.getElementById('checkout-btn').onclick = () => {
-      if (!getToken()) { location.href = '/profile.html'; return; }
+      if (!getToken()) return location.href = '/profile.html';
       location.href = '/checkout.html';
     };
     render();
@@ -388,7 +362,7 @@
   async function initCheckout() {
     const host = document.getElementById('main-content');
     const cart = getCart();
-    if (!cart.length) { host.innerHTML = `<p>${esc(t('cart_empty'))}</p>`; return; }
+    if (!cart.length) return host.innerHTML = `<p>${t('cart_empty')}</p>`;
 
     let total = 0, upfront = 0, remaining = 0;
     cart.forEach(item => {
@@ -401,21 +375,21 @@
     });
 
     host.innerHTML = `
-      <h2>${esc(t('checkout'))}</h2>
+      <h2>${t('checkout')}</h2>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
         <div>
-          <div class="form-group"><label>${esc(t('name'))}</label><input type="text" id="c-name" class="input"></div>
-          <div class="form-group"><label>${esc(t('phone'))}</label><input type="text" id="c-phone" class="input" value="${esc(AUTH_USER?.phone || '')}"></div>
-          <button class="btn btn-primary" id="loc-btn">${esc(t('get_location'))}</button>
+          <div class="form-group"><label>${t('name')}</label><input type="text" id="c-name" class="input"></div>
+          <div class="form-group"><label>${t('phone')}</label><input type="text" id="c-phone" class="input" value="${AUTH_USER?.phone || ''}"></div>
+          <button class="btn btn-primary" id="loc-btn">${t('get_location')}</button>
           <div id="map-preview" style="margin-top: 15px;"></div>
         </div>
         <div>
           <div class="cart-summary" style="text-align: left;">
-            <p><strong>${esc(t('cart_total'))}:</strong> ${fmtMoney(total)}</p>
-            <p><strong>${esc(t('upfront'))}:</strong> ${fmtMoney(upfront)}</p>
-            <p><strong>${esc(t('remaining'))}:</strong> ${fmtMoney(remaining)}</p>
+            <p><strong>${t('cart_total')}:</strong> ${fmtMoney(total)}</p>
+            <p><strong>${t('upfront')}:</strong> ${fmtMoney(upfront)}</p>
+            <p><strong>${t('remaining')}:</strong> ${fmtMoney(remaining)}</p>
             <hr style="margin:15px 0; border-color:#333;">
-            <button id="order-btn" class="btn btn-primary btn-block">${esc(t('submit_order'))}</button>
+            <button id="order-btn" class="btn btn-primary btn-block">${t('submit_order')}</button>
           </div>
         </div>
       </div>
@@ -424,8 +398,7 @@
     let lat = null, lng = null;
     document.getElementById('loc-btn').onclick = () => {
       navigator.geolocation.getCurrentPosition(pos => {
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
+        lat = pos.coords.latitude; lng = pos.coords.longitude;
         document.getElementById('map-preview').innerHTML = `<iframe width="100%" height="200" style="border:0;border-radius:8px;" src="https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed"></iframe>`;
       }, () => toast(t('error_generic')));
     };
@@ -435,7 +408,6 @@
       const name = document.getElementById('c-name').value.trim();
       const phone = document.getElementById('c-phone').value.trim();
       if (!name || !phone) return toast(t('required'));
-
       try {
         await api('/api/orders', {
           method: 'POST',
@@ -443,7 +415,7 @@
         });
         localStorage.removeItem('cart');
         toast(t('order_success'));
-        setTimeout(() => { location.href = '/'; }, 1000);
+        setTimeout(() => location.href = '/', 1000);
       } catch (e) { toast(e.message); }
     };
   }
@@ -454,20 +426,21 @@
       area.innerHTML = `
         <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
           <h2>${esc(AUTH_USER.phone)}</h2>
-          <p style="margin:20px 0;">Rol: <b>${esc(AUTH_USER.role === 'seller' ? t('seller_role') : t('customer_role'))}</b></p>
-          ${AUTH_USER.role === 'seller' ? `<a href="/seller.html" class="btn btn-primary" style="margin-bottom:10px; display:block;">${esc(t('seller_panel'))}</a>` : ''}
-          <button id="logout-profile" class="btn btn-danger btn-block">${esc(t('logout'))}</button>
+          <p style="margin:20px 0;">Rol: <b>${AUTH_USER.role === 'seller' ? t('seller_role') : t('customer_role')}</b></p>
+          ${AUTH_USER.role === 'seller' ? `<a href="/seller.html" class="btn btn-primary" style="margin-bottom:10px; display:block;">${t('seller_panel')}</a>` : ''}
+          <button id="logout-profile" class="btn btn-danger btn-block">${t('logout')}</button>
         </div>
       `;
       document.getElementById('logout-profile').onclick = () => { localStorage.removeItem('token'); location.href = '/'; };
       return;
     }
+
     area.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
-        <h2>${esc(t('choose_role'))}</h2>
+        <h2>${t('choose_role')}</h2>
         <div style="margin: 20px 0;">
-          <button id="role-cust" class="btn btn-primary" style="margin-right: 10px;">${esc(t('customer_role'))}</button>
-          <button id="role-sell" class="btn btn-primary">${esc(t('seller_role'))}</button>
+          <button id="role-cust" class="btn btn-primary" style="margin-right: 10px;">${t('customer_role')}</button>
+          <button id="role-sell" class="btn btn-primary">${t('seller_role')}</button>
         </div>
         <div id="auth-status" class="hidden" style="margin-top: 20px; color: var(--accent);"></div>
       </div>
@@ -483,15 +456,17 @@
 
         const interval = setInterval(async () => {
           try {
-            const s = await api(`/api/auth/status?nonce=${encodeURIComponent(res.nonce)}`);
+            const s = await api(`/api/auth/status?nonce=${res.nonce}`);
             if (s.status === 'waiting_code') {
               clearInterval(interval);
-              location.href = `/login.html?nonce=${encodeURIComponent(res.nonce)}`;
+              location.href = `/login.html?nonce=${res.nonce}`;
             }
           } catch (e) {}
         }, 2000);
         setTimeout(() => clearInterval(interval), 10 * 60 * 1000);
-      } catch (e) { statusDiv.textContent = e.message; }
+      } catch (e) {
+        statusDiv.textContent = "Xatolik: " + e.message;
+      }
     };
 
     document.getElementById('role-cust').onclick = () => startAuth('customer');
@@ -501,13 +476,13 @@
   function initLogin() {
     const host = document.getElementById('main-content');
     const nonce = new URLSearchParams(location.search).get('nonce');
-    if (!nonce) { host.innerHTML = '<p>Xato</p>'; return; }
+    if (!nonce) return host.innerHTML = '<p>Xato</p>';
 
     host.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
-        <h2>${esc(t('enter_code'))}</h2>
+        <h2>${t('enter_code')}</h2>
         <input type="text" id="code-input" class="input" style="text-align:center; font-size:24px; letter-spacing:5px;" maxlength="6">
-        <button id="verify-btn" class="btn btn-primary btn-block">${esc(t('verify'))}</button>
+        <button id="verify-btn" class="btn btn-primary btn-block">${t('verify')}</button>
         <p id="err-msg" style="color:var(--danger); margin-top:10px;"></p>
       </div>
     `;
@@ -519,7 +494,7 @@
         const res = await api('/api/auth/verify', { method: 'POST', body: { nonce, code } });
         localStorage.setItem('token', res.token);
         toast(t('success_auth'));
-        setTimeout(() => { location.href = '/'; }, 1000);
+        setTimeout(() => location.href = '/', 1000);
       } catch (e) { document.getElementById('err-msg').textContent = e.message; }
     };
   }
@@ -527,105 +502,135 @@
   function initSeller() {
     const host = document.getElementById('main-content');
     if (!AUTH_USER || AUTH_USER.role !== 'seller') {
-      if (host) host.innerHTML = '<p>Ruxsat yo\'q</p>';
-      return;
+      return host.innerHTML = '<p>Ruxsat yo\'q. Iltimos, Profil bo\'limidan Savdogar rolini tanlang.</p>';
     }
+    host.innerHTML = `
+      <h2>${t('seller_panel')}</h2>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top:20px;">
+        <div class="card" style="padding:20px;">
+          <div class="form-group"><label>${t('product_name')}</label><input type="text" id="p-name" class="input"></div>
+          <div class="form-group"><label>${t('price')}</label><input type="number" id="p-price" class="input"></div>
+
+          <div class="form-group"><label>Chegirma (%)</label><input type="number" id="p-discount" class="input" min="0" max="100" value="0"></div>
+          <div class="form-group"><label>Asar haqida izoh</label><textarea id="p-desc" class="input" rows="3"></textarea></div>
+
+          <div class="form-group">
+            <label>${t('genre')}</label>
+            <select id="p-genre" class="input">
+              <option value="portrait">${t('portrait')}</option>
+              <option value="landscape">${t('landscape')}</option>
+              <option value="stilllife">${t('stilllife')}</option>
+              <option value="abstract">${t('abstract')}</option>
+              <option value="animal">${t('animal')}</option>
+              <option value="modern">${t('modern')}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>${t('payment_type')}</label>
+            <select id="p-payment" class="input">
+              <option value="prepay100">${t('prepay100')}</option>
+              <option value="prepay50">${t('prepay50')}</option>
+              <option value="postpay100">${t('postpay100')}</option>
+            </select>
+          </div>
+          <div class="form-group"><label>${t('image_req')}</label><input type="file" id="p-img" accept="image/*"></div>
+          <img id="p-preview" class="hidden" style="max-width:100%; border-radius:8px; margin-bottom:15px;">
+          <button id="p-save" class="btn btn-primary btn-block">${t('create')}</button>
+        </div>
+        <div>
+          <h3>${t('my_works')}</h3>
+          <div id="my-list" style="margin-top:15px;"></div>
+        </div>
+      </div>
+    `;
 
     let base64Img = null;
-    const fileInput = document.getElementById('p-image');
-    if (fileInput) {
-      fileInput.onchange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          base64Img = reader.result;
-          const preview = document.getElementById('p-preview');
-          if (preview) {
-            preview.src = base64Img;
-            preview.classList.remove('hidden');
-          }
+    document.getElementById('p-img').onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height, max = 900;
+          if (w > max || h > max) { if (w > h) { h = h * max / w; w = max; } else { w = w * max / h; h = max; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          base64Img = canvas.toDataURL('image/jpeg', 0.85);
+          const prev = document.getElementById('p-preview');
+          prev.src = base64Img; prev.classList.remove('hidden');
         };
-        reader.readAsDataURL(file);
+        img.src = ev.target.result;
       };
-    }
+      reader.readAsDataURL(file);
+    };
 
-    async function loadMy() {
-      const list = document.getElementById('my-products');
-      if (!list) return;
-      try {
-        const res = await api('/api/seller/products');
-        if (!res.products || !res.products.length) {
-          list.innerHTML = `<p>${esc(t('no_works'))}</p>`;
-          return;
-        }
-        list.innerHTML = res.products.map(p => `
-          <div class="card" style="padding:15px; margin-bottom:15px;">
-            <img src="${esc(p.image)}" alt="${esc(p.name)}" style="max-width:160px; border-radius:8px;">
-            <h3>${esc(p.name)}</h3>
-            <p>${fmtMoney(p.price)}</p>
-            <button class="btn btn-danger" onclick="deleteProduct('${esc(p.id)}')">${esc(t('remove'))}</button>
+    const loadMy = async () => {
+      const res = await api('/api/seller/products');
+      const list = document.getElementById('my-list');
+      if (!res.products.length) return list.innerHTML = `<p>${t('no_works')}</p>`;
+      list.innerHTML = res.products.map(p => {
+        let discBadge = p.discount > 0 ? `<span style="background:#ff4d4f; color:white; padding:2px 5px; border-radius:5px; font-size:12px; margin-left:5px;">-${p.discount}%</span>` : '';
+        return `
+          <div class="cart-item" style="padding:10px; margin-bottom:10px;">
+            <img src="${p.image}" style="width:60px; height:60px;">
+            <div style="flex:1;">
+              <b>${esc(p.name)}</b> ${discBadge}<br><small>${t(p.genre)}</small>
+            </div>
+            <button class="btn btn-danger" onclick="deleteProduct('${p.id}')">X</button>
           </div>
-        `).join('');
-      } catch (e) { toast(e.message); }
-    }
+        `;
+      }).join('');
+    };
 
     window.deleteProduct = async (id) => {
       if (!confirm('O\'chirish?')) return;
-      try {
-        await api(`/api/seller/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        loadMy();
-      } catch (e) { toast(e.message); }
+      await api(`/api/seller/products/${id}`, { method: 'DELETE' });
+      loadMy();
     };
 
-    const saveBtn = document.getElementById('p-save');
-    if (saveBtn) {
-      saveBtn.onclick = async () => {
-        const name = document.getElementById('p-name').value.trim();
-        const price = parseInt(document.getElementById('p-price').value, 10);
-        const discount = parseInt(document.getElementById('p-discount')?.value, 10) || 0;
-        const description = (document.getElementById('p-desc')?.value || '').trim();
-        const genre = document.getElementById('p-genre').value;
-        const paymentType = document.getElementById('p-payment').value;
+    document.getElementById('p-save').onclick = async () => {
+      const name = document.getElementById('p-name').value.trim();
+      const price = parseInt(document.getElementById('p-price').value, 10);
+      const discount = parseInt(document.getElementById('p-discount').value, 10) || 0;
+      const description = document.getElementById('p-desc').value.trim();
+      const genre = document.getElementById('p-genre').value;
+      const paymentType = document.getElementById('p-payment').value;
 
-        if (!name || !price || !base64Img) return toast(t('required'));
+      if (!name || !price || !base64Img) return toast(t('required'));
 
-        try {
-          await api('/api/seller/products', {
-            method: 'POST',
-            body: { name, price, discount, description, genre, paymentType, image: base64Img }
-          });
-          toast('OK');
-          loadMy();
-          document.getElementById('p-name').value = '';
-          document.getElementById('p-price').value = '';
-          if (document.getElementById('p-discount')) document.getElementById('p-discount').value = '0';
-          if (document.getElementById('p-desc')) document.getElementById('p-desc').value = '';
-          base64Img = null;
-          document.getElementById('p-preview')?.classList.add('hidden');
-        } catch (e) { toast(e.message); }
-      };
-    }
-
+      try {
+        await api('/api/seller/products', {
+          method: 'POST',
+          body: { name, price, discount, description, genre, paymentType, image: base64Img }
+        });
+        toast('OK'); loadMy();
+        document.getElementById('p-name').value = '';
+        document.getElementById('p-price').value = '';
+        document.getElementById('p-discount').value = '0';
+        document.getElementById('p-desc').value = '';
+        base64Img = null; document.getElementById('p-preview').classList.add('hidden');
+      } catch (e) { toast(e.message); }
+    };
     loadMy();
   }
 
   async function initSold() {
     const host = document.getElementById('main-content');
-    if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
+    if (!AUTH_USER || AUTH_USER.role !== 'seller') return host.innerHTML = '<p>Ruxsat yo\'q</p>';
     try {
       const res = await api('/api/seller/sold');
-      if (!res.orders.length) { host.innerHTML = `<p>${esc(t('no_works'))}</p>`; return; }
-      host.innerHTML = `<h2>${esc(t('sold_items'))}</h2><div style="margin-top:20px;">` + res.orders.map(o => `
+      if (!res.orders.length) return host.innerHTML = `<p>${t('no_works')}</p>`;
+      host.innerHTML = `<h2>${t('sold_items')}</h2><div style="margin-top:20px;">` + res.orders.map(o => `
         <div class="card" style="padding:15px; margin-bottom:15px;">
           <h3>${esc(o.productName)}</h3>
-          <p><strong>${esc(t('price'))}:</strong> ${fmtMoney(o.price)}</p>
-          <p><strong>${esc(t('payment_type'))}:</strong> ${esc(t(o.paymentType))}</p>
-          <p><strong>${esc(t('buyer'))}:</strong> ${esc(o.buyerName)} (${esc(o.buyerPhone)})</p>
-          <iframe width="100%" height="150" style="border:0;border-radius:8px; margin-top:10px;" src="https://www.google.com/maps?q=${encodeURIComponent(o.lat)},${encodeURIComponent(o.lng)}&z=15&output=embed"></iframe>
+          <p><strong>${t('price')}:</strong> ${fmtMoney(o.price)}</p>
+          <p><strong>${t('payment_type')}:</strong> ${t(o.paymentType)}</p>
+          <p><strong>${t('buyer')}:</strong> ${esc(o.buyerName)} (${esc(o.buyerPhone)})</p>
+          <iframe width="100%" height="150" style="border:0;border-radius:8px; margin-top:10px;" src="https://www.google.com/maps?q=${o.lat},${o.lng}&z=15&output=embed"></iframe>
         </div>
       `).join('') + '</div>';
-    } catch (e) { host.innerHTML = `<p>${esc(e.message)}</p>`; }
+    } catch (e) { host.innerHTML = `<p>${e.message}</p>`; }
   }
 
   (async () => {
@@ -644,4 +649,4 @@
     else if (page === 'seller') initSeller();
     else if (page === 'sold') initSold();
   })();
-})();
+})();//test
