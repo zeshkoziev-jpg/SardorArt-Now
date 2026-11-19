@@ -228,21 +228,35 @@
       try {
         const res = await api(`/api/products?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(currentGenre)}`);
         if (!res.products || res.products.length === 0) {
-          grid.innerHTML = '';
-          empty.classList.remove('hidden');
+          if (grid) grid.innerHTML = '';
+          empty?.classList.remove('hidden');
           return;
         }
-        empty.classList.add('hidden');
-        grid.innerHTML = res.products.map(p => `
-          <a href="/product.html?id=${encodeURIComponent(p.id)}" class="card">
-            <img src="${esc(p.image)}" class="card-img" alt="${esc(p.name)}">
-            <div class="card-body">
-              <div class="card-title">${esc(p.name)}</div>
-              <div class="card-genre">${esc(t(p.genre))}</div>
-              <div class="card-price">${fmtMoney(p.price)}</div>
-            </div>
-          </a>
-        `).join('');
+        empty?.classList.add('hidden');
+        if (grid) {
+          grid.innerHTML = res.products.map(p => {
+            let priceHtml = `<div class="card-price">${fmtMoney(p.price)}</div>`;
+            if (p.discount > 0) {
+              priceHtml = `
+                <div class="card-price" style="color:#ff4d4f;">
+                  ${fmtMoney(p.price)}
+                  <span style="text-decoration:line-through; color:#888; font-size:14px; margin-left:5px;">${fmtMoney(p.originalPrice)}</span>
+                  <span style="background:#ff4d4f; color:white; padding:2px 5px; border-radius:5px; font-size:12px; margin-left:5px;">-${esc(p.discount)}%</span>
+                </div>
+              `;
+            }
+            return `
+              <a href="/product.html?id=${encodeURIComponent(p.id)}" class="card">
+                <img src="${esc(p.image)}" class="card-img" alt="${esc(p.name)}">
+                <div class="card-body">
+                  <div class="card-title">${esc(p.name)}</div>
+                  <div class="card-genre">${esc(t(p.genre))}</div>
+                  ${priceHtml}
+                </div>
+              </a>
+            `;
+          }).join('');
+        }
       } catch (e) { toast(e.message); }
     }
 
@@ -267,17 +281,36 @@
   async function initProduct() {
     const id = new URLSearchParams(location.search).get('id');
     const host = document.getElementById('product-detail');
+    if (!host) return;
     if (!id) { host.innerHTML = '<p>Xato</p>'; return; }
+
     try {
       const res = await api(`/api/products/${encodeURIComponent(id)}`);
       const p = res.product;
+
+      let priceHtml = `<div class="price">${fmtMoney(p.price)}</div>`;
+      if (p.discount > 0) {
+        priceHtml = `
+          <div class="price" style="color:#ff4d4f;">
+            ${fmtMoney(p.price)}
+            <span style="text-decoration:line-through; color:#888; font-size:20px; margin-left:10px;">${fmtMoney(p.originalPrice)}</span>
+            <span style="background:#ff4d4f; color:white; padding:3px 8px; border-radius:5px; font-size:16px; margin-left:10px;">-${esc(p.discount)}%</span>
+          </div>
+        `;
+      }
+
+      let descHtml = p.description
+        ? `<div class="mt-2" style="line-height:1.6; color:#aaa; margin-bottom:20px;">${esc(p.description)}</div>`
+        : '';
+
       host.innerHTML = `
         <div class="product-layout">
           <div class="product-image"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div>
           <div class="product-info">
             <div class="genre-tag">${esc(t(p.genre))}</div>
             <h1>${esc(p.name)}</h1>
-            <div class="price">${fmtMoney(p.price)}</div>
+            ${descHtml}
+            ${priceHtml}
             <div class="payment-info">
               <strong>${esc(t('payment_type'))}:</strong> ${esc(t(p.paymentType))}
             </div>
@@ -285,11 +318,14 @@
           </div>
         </div>
       `;
+
       document.getElementById('add-btn').onclick = () => {
         addToCart({ id: p.id, name: p.name, price: p.price, image: p.image, paymentType: p.paymentType });
         toast(t('add_to_cart'));
       };
-    } catch (e) { host.innerHTML = `<p>${esc(e.message)}</p>`; }
+    } catch (e) {
+      host.innerHTML = `<p>${esc(e.message)}</p>`;
+    }
   }
 
   function initCart() {
@@ -490,109 +526,87 @@
 
   function initSeller() {
     const host = document.getElementById('main-content');
-    if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
-
-    host.innerHTML = `
-      <h2>${esc(t('seller_panel'))}</h2>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top:20px;">
-        <div class="card" style="padding:20px;">
-          <div class="form-group"><label>${esc(t('product_name'))}</label><input type="text" id="p-name" class="input"></div>
-          <div class="form-group"><label>${esc(t('price'))}</label><input type="number" id="p-price" class="input"></div>
-          <div class="form-group">
-            <label>${esc(t('genre'))}</label>
-            <select id="p-genre" class="input">
-              <option value="portrait">${esc(t('portrait'))}</option>
-              <option value="landscape">${esc(t('landscape'))}</option>
-              <option value="stilllife">${esc(t('stilllife'))}</option>
-              <option value="abstract">${esc(t('abstract'))}</option>
-              <option value="animal">${esc(t('animal'))}</option>
-              <option value="modern">${esc(t('modern'))}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>${esc(t('payment_type'))}</label>
-            <select id="p-payment" class="input">
-              <option value="prepay100">${esc(t('prepay100'))}</option>
-              <option value="prepay50">${esc(t('prepay50'))}</option>
-              <option value="postpay100">${esc(t('postpay100'))}</option>
-            </select>
-          </div>
-          <div class="form-group"><label>${esc(t('image_req'))}</label><input type="file" id="p-img" accept="image/*"></div>
-          <img id="p-preview" class="hidden" style="max-width:100%; border-radius:8px; margin-bottom:15px;">
-          <button id="p-save" class="btn btn-primary btn-block">${esc(t('create'))}</button>
-        </div>
-        <div>
-          <h3>${esc(t('my_works'))}</h3>
-          <div id="my-list" style="margin-top:15px;"></div>
-        </div>
-      </div>
-    `;
+    if (!AUTH_USER || AUTH_USER.role !== 'seller') {
+      if (host) host.innerHTML = '<p>Ruxsat yo\'q</p>';
+      return;
+    }
 
     let base64Img = null;
-    document.getElementById('p-img').onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let w = img.width, h = img.height, max = 900;
-          if (w > max || h > max) {
-            if (w > h) { h = h * max / w; w = max; }
-            else { w = w * max / h; h = max; }
+    const fileInput = document.getElementById('p-image');
+    if (fileInput) {
+      fileInput.onchange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          base64Img = reader.result;
+          const preview = document.getElementById('p-preview');
+          if (preview) {
+            preview.src = base64Img;
+            preview.classList.remove('hidden');
           }
-          canvas.width = w;
-          canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          base64Img = canvas.toDataURL('image/jpeg', 0.85);
-          const prev = document.getElementById('p-preview');
-          prev.src = base64Img;
-          prev.classList.remove('hidden');
         };
-        img.src = ev.target.result;
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
-    };
+    }
 
-    const loadMy = async () => {
-      const res = await api('/api/seller/products');
-      const list = document.getElementById('my-list');
-      if (!res.products.length) { list.innerHTML = `<p>${esc(t('no_works'))}</p>`; return; }
-      list.innerHTML = res.products.map(p => `
-        <div class="cart-item" style="padding:10px; margin-bottom:10px;">
-          <img src="${esc(p.image)}" style="width:60px; height:60px;">
-          <div style="flex:1;">
-            <b>${esc(p.name)}</b><br><small>${esc(t(p.genre))}</small>
+    async function loadMy() {
+      const list = document.getElementById('my-products');
+      if (!list) return;
+      try {
+        const res = await api('/api/seller/products');
+        if (!res.products || !res.products.length) {
+          list.innerHTML = `<p>${esc(t('no_works'))}</p>`;
+          return;
+        }
+        list.innerHTML = res.products.map(p => `
+          <div class="card" style="padding:15px; margin-bottom:15px;">
+            <img src="${esc(p.image)}" alt="${esc(p.name)}" style="max-width:160px; border-radius:8px;">
+            <h3>${esc(p.name)}</h3>
+            <p>${fmtMoney(p.price)}</p>
+            <button class="btn btn-danger" onclick="deleteProduct('${esc(p.id)}')">${esc(t('remove'))}</button>
           </div>
-          <button class="btn btn-danger" onclick="deleteProduct('${esc(p.id)}')">X</button>
-        </div>
-      `).join('');
-    };
+        `).join('');
+      } catch (e) { toast(e.message); }
+    }
 
     window.deleteProduct = async (id) => {
       if (!confirm('O\'chirish?')) return;
-      await api(`/api/seller/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      loadMy();
-    };
-
-    document.getElementById('p-save').onclick = async () => {
-      const name = document.getElementById('p-name').value.trim();
-      const price = parseInt(document.getElementById('p-price').value, 10);
-      const genre = document.getElementById('p-genre').value;
-      const paymentType = document.getElementById('p-payment').value;
-      if (!name || !price || !base64Img) return toast(t('required'));
-
       try {
-        await api('/api/seller/products', { method: 'POST', body: { name, price, genre, paymentType, image: base64Img } });
-        toast('OK');
+        await api(`/api/seller/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
         loadMy();
-        document.getElementById('p-name').value = '';
-        document.getElementById('p-price').value = '';
-        base64Img = null;
-        document.getElementById('p-preview').classList.add('hidden');
       } catch (e) { toast(e.message); }
     };
+
+    const saveBtn = document.getElementById('p-save');
+    if (saveBtn) {
+      saveBtn.onclick = async () => {
+        const name = document.getElementById('p-name').value.trim();
+        const price = parseInt(document.getElementById('p-price').value, 10);
+        const discount = parseInt(document.getElementById('p-discount')?.value, 10) || 0;
+        const description = (document.getElementById('p-desc')?.value || '').trim();
+        const genre = document.getElementById('p-genre').value;
+        const paymentType = document.getElementById('p-payment').value;
+
+        if (!name || !price || !base64Img) return toast(t('required'));
+
+        try {
+          await api('/api/seller/products', {
+            method: 'POST',
+            body: { name, price, discount, description, genre, paymentType, image: base64Img }
+          });
+          toast('OK');
+          loadMy();
+          document.getElementById('p-name').value = '';
+          document.getElementById('p-price').value = '';
+          if (document.getElementById('p-discount')) document.getElementById('p-discount').value = '0';
+          if (document.getElementById('p-desc')) document.getElementById('p-desc').value = '';
+          base64Img = null;
+          document.getElementById('p-preview')?.classList.add('hidden');
+        } catch (e) { toast(e.message); }
+      };
+    }
+
     loadMy();
   }
 

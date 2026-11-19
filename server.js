@@ -299,16 +299,30 @@ function auth(required = true) {
   };
 }
 
-app.post('/api/auth/start', rateLimit(10), async (req, res) => {
-  const { role } = req.body;
-  const nonce = crypto.randomBytes(16).toString('hex');
-  DATA.authNonces[nonce] = { role, createdAt: Date.now(), status: 'pending' };
-  await saveData();
-  res.json({ nonce, url: `https://t.me/${AUTH_BOT_USERNAME}?start=${nonce}` });
+app.post('/api/seller/products', auth(), rateLimit(20), async (req, res) => {
+  if (req.user.role !== 'seller') return res.status(403).json({ error: 'Ruxsat yo\'q' });
+  const { name, price, genre, paymentType, image, description, discount } = req.body;
+  const disc = Number(discount) || 0;
+  
+  const id = crypto.randomBytes(8).toString('hex');
+  const product = { 
+    id, name, price, genre, paymentType, image, 
+    description: description || '', discount: disc, 
+    sellerPhone: req.user.phone, status: 'available', createdAt: Date.now() 
+  };
+  DATA.products.push(product); await saveData(); res.json({ product });
 });
-app.get('/api/auth/status', (req, res) => {
-  const auth = DATA.authNonces[req.query.nonce];
-  res.json({ status: auth ? auth.status : 'not_found' });
+app.get('/api/products', (req, res) => {
+  let list = DATA.products.filter(p => p.status === 'available');
+  const { q, genre } = req.query;
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+  if (genre && genre !== 'all') list = list.filter(p => p.genre === genre);
+  list.sort((a, b) => b.createdAt - a.createdAt);
+  res.json({ products: list.map(p => {
+    const d = p.discount || 0; 
+    const finalPrice = d > 0 ? Math.round(p.price * (1 - d / 100)) : p.price;
+    return { id: p.id, name: p.name, price: finalPrice, originalPrice: p.price, discount: d, genre: p.genre, paymentType: p.paymentType, image: p.image };
+  })});
 });
 app.post('/api/auth/verify', rateLimit(10), async (req, res) => {
   const { nonce, code } = req.body;
@@ -338,7 +352,8 @@ app.get('/api/products', (req, res) => {
 app.get('/api/products/:id', (req, res) => {
   const p = DATA.products.find(x => x.id === req.params.id && x.status === 'available');
   if (!p) return res.status(404).json({ error: 'Topilmadi' });
-  const d = p.discount || 0; const finalPrice = d > 0 ? Math.round(p.price * (1 - d / 100)) : p.price;
+  const d = p.discount || 0; 
+  const finalPrice = d > 0 ? Math.round(p.price * (1 - d / 100)) : p.price;
   res.json({ product: { id: p.id, name: p.name, price: finalPrice, originalPrice: p.price, discount: d, genre: p.genre, paymentType: p.paymentType, image: p.image, description: p.description || '' } });
 });
 app.get('/api/seller/products', auth(), (req, res) => {
