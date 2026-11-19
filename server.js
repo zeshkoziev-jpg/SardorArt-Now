@@ -265,14 +265,42 @@ async function handleOrderUpdate(update) {
 // ==========================================
 // EXPRESS SERVER VA API
 // ==========================================
+const express = require('express');
 const app = express();
-app.disable('x-powered-by');
-app.use(express.json({ limit: '3mb' }));
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://www.google.com https://maps.google.com; frame-src https://www.google.com https://maps.google.com; script-src 'self'; style-src 'self' 'unsafe-inline';");
-  next();
+
+// 1) Body'ni o'qish uchun (eng tepada, route'lardan oldin)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Vaqtincha kodlarni xotirada saqlash
+const codes = {};
+
+// 2) /api/auth/start
+app.post('/api/auth/start', (req, res) => {
+  console.log('BODY:', req.body); // Render logida ko'rinadi
+
+  const body = req.body || {};
+  const email = (body.email || '').trim().toLowerCase();
+  const phone = (body.phone || '').trim();
+  const role  = body.role || 'mijoz';
+  const id = email || phone;
+
+  if (!id) {
+    return res.status(400).json({
+      error: 'email yoki phone yuborilmadi',
+      received: body
+    });
+  }
+
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ error: 'email formati noto‘g‘ri' });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  codes[id] = { code, role, expires: Date.now() + 5 * 60 * 1000 };
+
+  console.log('KOD:', id, code); // keyin email/Telegram orqali yuboriladi
+  res.json({ ok: true, message: 'Kod yuborildi' });
 });
 app.get('/api/config', (req, res) => res.json({ phone: process.env.PHONE || '+998 90 123 45 67' }));
 
