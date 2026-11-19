@@ -85,7 +85,21 @@
   }
   return data;
 }
-
+const getCart = () => JSON.parse(localStorage.getItem('cart') || '[]');
+const setCart = (c) => { localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); };
+function addToCart(item) {
+  const c = getCart(); const f = c.find(x => x.id === item.id);
+  if (f) f.qty += 1; else c.push({ ...item, qty: 1 });
+  setCart(c);
+}
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge');
+  if (badge) {
+    const count = getCart().reduce((s, x) => s + x.qty, 0);
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+}
   function renderHeader() {
     const host = document.getElementById('main-header');
     if (!host) return;
