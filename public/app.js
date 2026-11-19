@@ -511,8 +511,10 @@
           <div class="form-group"><label>${t('product_name')}</label><input type="text" id="p-name" class="input"></div>
           <div class="form-group"><label>${t('price')}</label><input type="number" id="p-price" class="input"></div>
 
+          <!-- CHEGIRMA VA IZOH QISMI -->
           <div class="form-group"><label>Chegirma (%)</label><input type="number" id="p-discount" class="input" min="0" max="100" value="0"></div>
           <div class="form-group"><label>Asar haqida izoh</label><textarea id="p-desc" class="input" rows="3"></textarea></div>
+          <!-- ------------------------- -->
 
           <div class="form-group">
             <label>${t('genre')}</label>
@@ -649,4 +651,4 @@
     else if (page === 'seller') initSeller();
     else if (page === 'sold') initSold();
   })();
-})();//test
+})();
