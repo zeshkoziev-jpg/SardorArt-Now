@@ -122,16 +122,15 @@
         <button class="menu-btn" id="menu-toggle">☰</button>
         <a href="/" class="logo">SARDOR ART</a>
         <div class="search-bar">
-          <input type="text" id="search-input" placeholder="${t('search')}...">
+          <input type="text" id="search-input" placeholder="${esc(t('search'))}...">
         </div>
         <nav class="nav-links">
-          <a href="/">${t('home')}</a>
-          ${isAuth
-            ? `${AUTH_USER.role === 'seller' ? `<a href="/seller.html">${t('seller')}</a><a href="/sold.html">${t('sold')}</a>` : ''}
-               <a href="/profile.html">${t('profile')}</a>`
-            : `<a href="/profile.html">${t('profile')}</a>`}
-          <a href="/cart.html">${t('cart')} <span id="cart-badge" class="badge hidden">0</span></a>
-          ${isAuth ? `<button id="logout-btn">${t('logout')}</button>` : ''}
+          <a href="/">${esc(t('home'))}</a>
+          <a href="/order.html" style="color:var(--accent); font-weight:bold;">Zakaz berish</a>
+          ${isAuth && AUTH_USER.role === 'seller' ? `<a href="/seller.html">${esc(t('seller'))}</a><a href="/sold.html">${esc(t('sold'))}</a>` : ''}
+          <a href="/profile.html">${esc(t('profile'))}</a>
+          <a href="/cart.html">${esc(t('cart'))} <span id="cart-badge" class="badge hidden">0</span></a>
+          ${isAuth ? `<button id="logout-btn">${esc(t('logout'))}</button>` : ''}
         </nav>
       </div>
     `;
@@ -145,10 +144,10 @@
 
     const searchInput = document.getElementById('search-input');
     const urlQ = new URLSearchParams(location.search).get('q');
-    if (urlQ) searchInput.value = urlQ;
+    if (urlQ && searchInput) searchInput.value = urlQ;
 
     let timer;
-    searchInput.addEventListener('input', (e) => {
+    searchInput?.addEventListener('input', (e) => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const q = e.target.value.trim();
@@ -180,8 +179,8 @@
 
     host.innerHTML = `
       <div class="footer-inner">
-        <div class="footer-phone">${phone}</div>
-        <div class="footer-phone">${phone1}</div>
+        <div class="footer-phone">${esc(phone)}</div>
+        <div class="footer-phone">${esc(phone1)}</div>
         <div class="payment-logos">
           <span class="pay-logo">HUMO</span><span class="pay-logo">UZCARD</span><span class="pay-logo">VISA</span><span class="pay-logo">MASTERCARD</span>
         </div>
@@ -218,7 +217,7 @@
     const sidebar = document.getElementById('sidebar');
     const genres = ['all', 'portrait', 'landscape', 'stilllife', 'abstract', 'animal', 'modern'];
     if (sidebar) {
-      sidebar.innerHTML = `<h3>${t('genre')}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${g}">${t(g)}</li>`).join('')}</ul>`;
+      sidebar.innerHTML = `<h3>${esc(t('genre'))}</h3><ul class="genre-list">${genres.map(g => `<li data-genre="${esc(g)}">${esc(t(g))}</li>`).join('')}</ul>`;
     }
 
     let currentGenre = 'all';
@@ -235,11 +234,11 @@
         }
         empty.classList.add('hidden');
         grid.innerHTML = res.products.map(p => `
-          <a href="/product.html?id=${p.id}" class="card">
-            <img src="${p.image}" class="card-img" alt="${esc(p.name)}">
+          <a href="/product.html?id=${encodeURIComponent(p.id)}" class="card">
+            <img src="${esc(p.image)}" class="card-img" alt="${esc(p.name)}">
             <div class="card-body">
               <div class="card-title">${esc(p.name)}</div>
-              <div class="card-genre">${t(p.genre)}</div>
+              <div class="card-genre">${esc(t(p.genre))}</div>
               <div class="card-price">${fmtMoney(p.price)}</div>
             </div>
           </a>
@@ -253,7 +252,7 @@
           sidebar.querySelectorAll('li').forEach(el => el.classList.remove('active'));
           e.target.classList.add('active');
           currentGenre = e.target.dataset.genre;
-          load(document.getElementById('search-input').value.trim());
+          load((document.getElementById('search-input')?.value || '').trim());
         }
       });
       sidebar.querySelector('[data-genre="all"]')?.classList.add('active');
@@ -274,15 +273,15 @@
       const p = res.product;
       host.innerHTML = `
         <div class="product-layout">
-          <div class="product-image"><img src="${p.image}" alt="${esc(p.name)}"></div>
+          <div class="product-image"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div>
           <div class="product-info">
-            <div class="genre-tag">${t(p.genre)}</div>
+            <div class="genre-tag">${esc(t(p.genre))}</div>
             <h1>${esc(p.name)}</h1>
             <div class="price">${fmtMoney(p.price)}</div>
             <div class="payment-info">
-              <strong>${t('payment_type')}:</strong> ${t(p.paymentType)}
+              <strong>${esc(t('payment_type'))}:</strong> ${esc(t(p.paymentType))}
             </div>
-            <button class="btn btn-primary btn-block" id="add-btn">${t('add_to_cart')}</button>
+            <button class="btn btn-primary btn-block" id="add-btn">${esc(t('add_to_cart'))}</button>
           </div>
         </div>
       `;
@@ -301,7 +300,7 @@
     function render() {
       const cart = getCart();
       if (!cart.length) {
-        list.innerHTML = `<p class="empty-msg">${t('cart_empty')}</p>`;
+        list.innerHTML = `<p class="empty-msg">${esc(t('cart_empty'))}</p>`;
         summary.classList.add('hidden');
         return;
       }
@@ -311,17 +310,17 @@
         total += item.price * item.qty;
         return `
           <div class="cart-item">
-            <img src="${item.image}" alt="">
+            <img src="${esc(item.image)}" alt="">
             <div class="cart-item-info">
               <h3>${esc(item.name)}</h3>
               <div class="price">${fmtMoney(item.price)}</div>
               <div class="qty-controls">
-                <button data-id="${item.id}" data-act="minus">-</button>
+                <button data-id="${esc(item.id)}" data-act="minus">-</button>
                 <span>${item.qty}</span>
-                <button data-id="${item.id}" data-act="plus">+</button>
+                <button data-id="${esc(item.id)}" data-act="plus">+</button>
               </div>
             </div>
-            <button class="btn btn-danger" data-id="${item.id}" data-act="remove">${t('remove')}</button>
+            <button class="btn btn-danger" data-id="${esc(item.id)}" data-act="remove">${esc(t('remove'))}</button>
           </div>
         `;
       }).join('');
@@ -353,7 +352,7 @@
   async function initCheckout() {
     const host = document.getElementById('main-content');
     const cart = getCart();
-    if (!cart.length) { host.innerHTML = `<p>${t('cart_empty')}</p>`; return; }
+    if (!cart.length) { host.innerHTML = `<p>${esc(t('cart_empty'))}</p>`; return; }
 
     let total = 0, upfront = 0, remaining = 0;
     cart.forEach(item => {
@@ -366,21 +365,21 @@
     });
 
     host.innerHTML = `
-      <h2>${t('checkout')}</h2>
+      <h2>${esc(t('checkout'))}</h2>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
         <div>
-          <div class="form-group"><label>${t('name')}</label><input type="text" id="c-name" class="input"></div>
-          <div class="form-group"><label>${t('phone')}</label><input type="text" id="c-phone" class="input" value="${esc(AUTH_USER?.phone || '')}"></div>
-          <button class="btn btn-primary" id="loc-btn">${t('get_location')}</button>
+          <div class="form-group"><label>${esc(t('name'))}</label><input type="text" id="c-name" class="input"></div>
+          <div class="form-group"><label>${esc(t('phone'))}</label><input type="text" id="c-phone" class="input" value="${esc(AUTH_USER?.phone || '')}"></div>
+          <button class="btn btn-primary" id="loc-btn">${esc(t('get_location'))}</button>
           <div id="map-preview" style="margin-top: 15px;"></div>
         </div>
         <div>
           <div class="cart-summary" style="text-align: left;">
-            <p><strong>${t('cart_total')}:</strong> ${fmtMoney(total)}</p>
-            <p><strong>${t('upfront')}:</strong> ${fmtMoney(upfront)}</p>
-            <p><strong>${t('remaining')}:</strong> ${fmtMoney(remaining)}</p>
+            <p><strong>${esc(t('cart_total'))}:</strong> ${fmtMoney(total)}</p>
+            <p><strong>${esc(t('upfront'))}:</strong> ${fmtMoney(upfront)}</p>
+            <p><strong>${esc(t('remaining'))}:</strong> ${fmtMoney(remaining)}</p>
             <hr style="margin:15px 0; border-color:#333;">
-            <button id="order-btn" class="btn btn-primary btn-block">${t('submit_order')}</button>
+            <button id="order-btn" class="btn btn-primary btn-block">${esc(t('submit_order'))}</button>
           </div>
         </div>
       </div>
@@ -419,9 +418,9 @@
       area.innerHTML = `
         <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
           <h2>${esc(AUTH_USER.phone)}</h2>
-          <p style="margin:20px 0;">Rol: <b>${AUTH_USER.role === 'seller' ? t('seller_role') : t('customer_role')}</b></p>
-          ${AUTH_USER.role === 'seller' ? `<a href="/seller.html" class="btn btn-primary" style="margin-bottom:10px; display:block;">${t('seller_panel')}</a>` : ''}
-          <button id="logout-profile" class="btn btn-danger btn-block">${t('logout')}</button>
+          <p style="margin:20px 0;">Rol: <b>${esc(AUTH_USER.role === 'seller' ? t('seller_role') : t('customer_role'))}</b></p>
+          ${AUTH_USER.role === 'seller' ? `<a href="/seller.html" class="btn btn-primary" style="margin-bottom:10px; display:block;">${esc(t('seller_panel'))}</a>` : ''}
+          <button id="logout-profile" class="btn btn-danger btn-block">${esc(t('logout'))}</button>
         </div>
       `;
       document.getElementById('logout-profile').onclick = () => { localStorage.removeItem('token'); location.href = '/'; };
@@ -429,10 +428,10 @@
     }
     area.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
-        <h2>${t('choose_role')}</h2>
+        <h2>${esc(t('choose_role'))}</h2>
         <div style="margin: 20px 0;">
-          <button id="role-cust" class="btn btn-primary" style="margin-right: 10px;">${t('customer_role')}</button>
-          <button id="role-sell" class="btn btn-primary">${t('seller_role')}</button>
+          <button id="role-cust" class="btn btn-primary" style="margin-right: 10px;">${esc(t('customer_role'))}</button>
+          <button id="role-sell" class="btn btn-primary">${esc(t('seller_role'))}</button>
         </div>
         <div id="auth-status" class="hidden" style="margin-top: 20px; color: var(--accent);"></div>
       </div>
@@ -470,9 +469,9 @@
 
     host.innerHTML = `
       <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center; padding: 30px;">
-        <h2>${t('enter_code')}</h2>
+        <h2>${esc(t('enter_code'))}</h2>
         <input type="text" id="code-input" class="input" style="text-align:center; font-size:24px; letter-spacing:5px;" maxlength="6">
-        <button id="verify-btn" class="btn btn-primary btn-block">${t('verify')}</button>
+        <button id="verify-btn" class="btn btn-primary btn-block">${esc(t('verify'))}</button>
         <p id="err-msg" style="color:var(--danger); margin-top:10px;"></p>
       </div>
     `;
@@ -494,36 +493,36 @@
     if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
 
     host.innerHTML = `
-      <h2>${t('seller_panel')}</h2>
+      <h2>${esc(t('seller_panel'))}</h2>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top:20px;">
         <div class="card" style="padding:20px;">
-          <div class="form-group"><label>${t('product_name')}</label><input type="text" id="p-name" class="input"></div>
-          <div class="form-group"><label>${t('price')}</label><input type="number" id="p-price" class="input"></div>
+          <div class="form-group"><label>${esc(t('product_name'))}</label><input type="text" id="p-name" class="input"></div>
+          <div class="form-group"><label>${esc(t('price'))}</label><input type="number" id="p-price" class="input"></div>
           <div class="form-group">
-            <label>${t('genre')}</label>
+            <label>${esc(t('genre'))}</label>
             <select id="p-genre" class="input">
-              <option value="portrait">${t('portrait')}</option>
-              <option value="landscape">${t('landscape')}</option>
-              <option value="stilllife">${t('stilllife')}</option>
-              <option value="abstract">${t('abstract')}</option>
-              <option value="animal">${t('animal')}</option>
-              <option value="modern">${t('modern')}</option>
+              <option value="portrait">${esc(t('portrait'))}</option>
+              <option value="landscape">${esc(t('landscape'))}</option>
+              <option value="stilllife">${esc(t('stilllife'))}</option>
+              <option value="abstract">${esc(t('abstract'))}</option>
+              <option value="animal">${esc(t('animal'))}</option>
+              <option value="modern">${esc(t('modern'))}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>${t('payment_type')}</label>
+            <label>${esc(t('payment_type'))}</label>
             <select id="p-payment" class="input">
-              <option value="prepay100">${t('prepay100')}</option>
-              <option value="prepay50">${t('prepay50')}</option>
-              <option value="postpay100">${t('postpay100')}</option>
+              <option value="prepay100">${esc(t('prepay100'))}</option>
+              <option value="prepay50">${esc(t('prepay50'))}</option>
+              <option value="postpay100">${esc(t('postpay100'))}</option>
             </select>
           </div>
-          <div class="form-group"><label>${t('image_req')}</label><input type="file" id="p-img" accept="image/*"></div>
+          <div class="form-group"><label>${esc(t('image_req'))}</label><input type="file" id="p-img" accept="image/*"></div>
           <img id="p-preview" class="hidden" style="max-width:100%; border-radius:8px; margin-bottom:15px;">
-          <button id="p-save" class="btn btn-primary btn-block">${t('create')}</button>
+          <button id="p-save" class="btn btn-primary btn-block">${esc(t('create'))}</button>
         </div>
         <div>
-          <h3>${t('my_works')}</h3>
+          <h3>${esc(t('my_works'))}</h3>
           <div id="my-list" style="margin-top:15px;"></div>
         </div>
       </div>
@@ -559,14 +558,14 @@
     const loadMy = async () => {
       const res = await api('/api/seller/products');
       const list = document.getElementById('my-list');
-      if (!res.products.length) { list.innerHTML = `<p>${t('no_works')}</p>`; return; }
+      if (!res.products.length) { list.innerHTML = `<p>${esc(t('no_works'))}</p>`; return; }
       list.innerHTML = res.products.map(p => `
         <div class="cart-item" style="padding:10px; margin-bottom:10px;">
-          <img src="${p.image}" style="width:60px; height:60px;">
+          <img src="${esc(p.image)}" style="width:60px; height:60px;">
           <div style="flex:1;">
-            <b>${esc(p.name)}</b><br><small>${t(p.genre)}</small>
+            <b>${esc(p.name)}</b><br><small>${esc(t(p.genre))}</small>
           </div>
-          <button class="btn btn-danger" onclick="deleteProduct('${p.id}')">X</button>
+          <button class="btn btn-danger" onclick="deleteProduct('${esc(p.id)}')">X</button>
         </div>
       `).join('');
     };
@@ -602,14 +601,14 @@
     if (!AUTH_USER || AUTH_USER.role !== 'seller') { host.innerHTML = '<p>Ruxsat yo\'q</p>'; return; }
     try {
       const res = await api('/api/seller/sold');
-      if (!res.orders.length) { host.innerHTML = `<p>${t('no_works')}</p>`; return; }
-      host.innerHTML = `<h2>${t('sold_items')}</h2><div style="margin-top:20px;">` + res.orders.map(o => `
+      if (!res.orders.length) { host.innerHTML = `<p>${esc(t('no_works'))}</p>`; return; }
+      host.innerHTML = `<h2>${esc(t('sold_items'))}</h2><div style="margin-top:20px;">` + res.orders.map(o => `
         <div class="card" style="padding:15px; margin-bottom:15px;">
           <h3>${esc(o.productName)}</h3>
-          <p><strong>${t('price')}:</strong> ${fmtMoney(o.price)}</p>
-          <p><strong>${t('payment_type')}:</strong> ${t(o.paymentType)}</p>
-          <p><strong>${t('buyer')}:</strong> ${esc(o.buyerName)} (${esc(o.buyerPhone)})</p>
-          <iframe width="100%" height="150" style="border:0;border-radius:8px; margin-top:10px;" src="https://www.google.com/maps?q=${o.lat},${o.lng}&z=15&output=embed"></iframe>
+          <p><strong>${esc(t('price'))}:</strong> ${fmtMoney(o.price)}</p>
+          <p><strong>${esc(t('payment_type'))}:</strong> ${esc(t(o.paymentType))}</p>
+          <p><strong>${esc(t('buyer'))}:</strong> ${esc(o.buyerName)} (${esc(o.buyerPhone)})</p>
+          <iframe width="100%" height="150" style="border:0;border-radius:8px; margin-top:10px;" src="https://www.google.com/maps?q=${encodeURIComponent(o.lat)},${encodeURIComponent(o.lng)}&z=15&output=embed"></iframe>
         </div>
       `).join('') + '</div>';
     } catch (e) { host.innerHTML = `<p>${esc(e.message)}</p>`; }
@@ -631,5 +630,4 @@
     else if (page === 'seller') initSeller();
     else if (page === 'sold') initSold();
   })();
-
 })();
